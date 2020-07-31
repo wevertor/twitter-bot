@@ -19,42 +19,50 @@ class StatusListener(tweepy.StreamListener):
 		self.client = client
 		self.user = user
 
-	def on_status(self, status):
+	def post_reply(self, status):
 		statusID = status.id_str
-
+		i = 0
 		print(f"Processing status {statusID}.")
-
 		media = get_status_media(status)
+		if media is None or media[0]["type"] != "photo":
+			print("Sem imagens.")
+			return
+		
+		urlArray = get_media_url(media)
+		# download all images
 
-		if media is not None and media[0]["type"] == "photo":
-			urlArray = get_media_url(media)
-			# download all images
+		print("Downloading images...")
+		# for i, url in enumerate(urlArray):
+		utils.download_image(f"image{i}.jpg", urlArray[0])
+		print("Completed!")
 
-			print("Downloading images...")
-			for i, url in enumerate(urlArray):
-				utils.download_image(f"image{i}.jpg", url)
-			print("Completed!")
+		print("Coloring images...")
+		# for i, url in enumerate(urlArray):
+		colorize_image(f"image{i}.jpg")
+		print("Completed!")
 
-			print("Coloring images...")
-			for i, url in enumerate(urlArray):
-				colorize_image(f"image{i}.jpg")
-			print("Completed!")
+		print("Uploading images...")
+		newMedias = []
+		# for i, url in enumerate(urlArray):
 
-			print("Uploading images...")
-			newMedias = []
-			for i, url in enumerate(urlArray):
+		newMedia = self.client.media_upload(f"image{i}.jpg")
+			
+		newMedias.append(newMedia.media_id)
+		# print(self.user)
 
-				newMedia = self.client.media_upload(f"image{i}.jpg")
-				
-				newMedias.append(newMedia.media_id)
-			print(self.user)
+		res = self.client.update_status(
+			"",
+			in_reply_to_status_id=statusID,
+			media_ids=newMedias, auto_populate_reply_metadata=True)
+		print("Completed!")
 
-			res = self.client.update_status(
-				"@" + (self.user.screen_name),
-				in_reply_to_status_id=self.user.id,
-				media_ids=newMedias, auto_populate_reply_data=True)
-			print("Completed!")
-		return
+	def on_status(self, status):
+		if status.author.name == self.user.name:
+			self.post_reply(status)
+
+		
+
+		
 
 	def on_error(self, status):
 		print(status)
