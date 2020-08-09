@@ -5,12 +5,20 @@ import utils
 from config import keys
 
 
-def init_bot(keys):
+def init_client(keys):
+	"""
+	Return a client for the twitter API.
+	
+	Parameters
+	---------------
+	keys (dict): 
+		Dictionary with the consumer_key, consumer_secret, access_token,
+		access_token_secret elements.  
+	"""
+	auth = tweepy.OAuthHandler(keys["consumer_key"], keys["consumer_secret"])
+	auth.set_access_token(keys["access_token"], keys["access_token_secret"])
 
-    auth = tweepy.OAuthHandler(keys["consumer_key"], keys["consumer_secret"])
-    auth.set_access_token(keys["access_token"], keys["access_token_secret"])
-
-    return tweepy.API(auth)
+	return tweepy.API(auth)
 
 
 class StatusListener(tweepy.StreamListener):
@@ -29,26 +37,25 @@ class StatusListener(tweepy.StreamListener):
 			return
 		
 		urlArray = get_media_url(media)
-		# download all images
 
 		print("Downloading images...")
-		# for i, url in enumerate(urlArray):
-		utils.download_image(f"image{i}.jpg", urlArray[0])
+		
+		for i, url in enumerate(urlArray):
+			utils.download_image(f"image{i}.jpg", urlArray[0])
+		
 		print("Completed!")
-
 		print("Coloring images...")
-		# for i, url in enumerate(urlArray):
-		colorize_image(f"image{i}.jpg")
+		
+		for i, url in enumerate(urlArray):
+			colorize_image(f"image{i}.jpg")
+		
 		print("Completed!")
-
 		print("Uploading images...")
-		newMedias = []
-		# for i, url in enumerate(urlArray):
 
-		newMedia = self.client.media_upload(f"image{i}.jpg")
-			
-		newMedias.append(newMedia.media_id)
-		# print(self.user)
+		newMedias = []
+		for i, url in enumerate(urlArray):
+			newMedia = self.client.media_upload(f"image{i}.jpg")
+			newMedias.append(newMedia.media_id)
 
 		res = self.client.update_status(
 			"",
@@ -60,10 +67,6 @@ class StatusListener(tweepy.StreamListener):
 		if status.author.name == self.user.name:
 			self.post_reply(status)
 
-		
-
-		
-
 	def on_error(self, status):
 		print(status)
 
@@ -71,8 +74,8 @@ class StatusListener(tweepy.StreamListener):
 def get_status_media(status):
     if ("media" in status.entities):
         return status.entities["media"]
-    # print("Status has no media.")
-    # return None
+    print("Status has no media.")
+    return None
 
 
 def get_media_url(mediaArray):

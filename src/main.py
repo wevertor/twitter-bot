@@ -4,7 +4,7 @@ import bot
 import json
 from config import keys
 
-client = bot.init_bot(keys)
+client = bot.init_client(keys)
 user = client.get_user("@trindamaster")
 
 listener = bot.StatusListener(client, user)
